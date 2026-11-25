@@ -81,7 +81,24 @@
                             </select>
                         </div>
 
-                        
+                        <!-- Lesson cards: v-for repeats one card for every lesson in "sortedLessons" -->
+                         <div class="grid">
+                            <div class="card" v-for="lesson in sortedlessons" :key="lesson._id">
+
+                                <!-- Image comes from the Express static middleware: /images/<file name> -->
+                                    <img :src="apiUrl + '/images' + lesson.image" :alt="lesson.topic">
+
+                                    <h3><i class="fa-solid fa-book-open"></i> {{ lesson.topic }}</h3>
+                                    <p><i class="fa-solid fa-location-dot"></i> Location: {{ lesson.location }}</p>
+                                    <p><i class="fa-solid fa-sterling-sign"></i> Price: £{{ lesson.price }}</p>
+                                    <p><i class="fa-solid fa-chair"></i> Spaces left: {{lesson.space }}</p>
+
+                                    <!-- [Challenge] Enrollment: how many spaceshave already been bought (from /enrolment/:id) -->
+                                     <p><i class="fa-solid fa-users"></i> Booked: {{ enrolments[lesson._id] || 0 }}</p>
+
+                                     
+                            </div>
+                         </div>
 
 
                  </div>
