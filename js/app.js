@@ -207,4 +207,23 @@ createApp({
             });
         }
     },
-})
+
+    // --------------------------------------------
+    // WATCH: runs a function every time a variable changes
+    // --------------------------------------------
+    watch: {
+        // [Challenge: Search] search "as you type"
+        searchTerm() {
+            this.searchLessons();
+        }
+    },
+
+    // ------------------------------------------
+    // MOUNTED: runs once when the page first loads
+    // ------------------------------------------
+    mounted() {
+        this.getLessons();
+        this.getTeachers();
+    }
+
+}).mount('#app');   //connect Vue to <div id="app"> in index.html
