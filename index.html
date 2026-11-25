@@ -70,7 +70,20 @@
                         <input type="radio" value="desc" v-model="sortOrder"> Descending
                        </div>
 
-                       
+                       <!-- [Challenge] Teacher dropdown, filled from the /teachers route -->
+                        <div>
+                            <label>Teacher</label>
+                            <select v-model="selectedTeacher">
+                                <option value="">All teachers</option>
+                                <option v-for="teacher in teachers" :key="teacher._id" :value="teacher._id">
+                                    {{ teacher.firstName }} {{ teacher.lastName}}
+                                </option>
+                            </select>
+                        </div>
+
+                        
+
+
                  </div>
                </div>
         </main>
