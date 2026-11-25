@@ -44,3 +44,19 @@ label{ font-weight: bold; display: block; margin: 10px 0 5px; }
 .card img{ width: 100%; height: 150px; object-fit: cover; border-radius: 15px; margin-bottom: 10px; }
 .card p{ margin: 6px 0; }
 .card .btn{ width: 100%; margin-top: 10px; }
+
+/* Cart page: items on the left, checkout on the right */
+.cart-page{ display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin: 25px 0 40px; align-items: start; }
+.cart-item{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.cart-item .btn{ width: auto; margin: 0; }
+
+.error{ color: var(--red); font-size: 0.85rem; }
+.success{ background: var(--light); padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; }
+
+footer{ background: var(--primary); color: white; text-align: center; padding: 20px; }
+footer a{ color: white; }
+
+/* On small screens cart page in one column */
+@media (max-width: 700px) {
+    .cart-page { grid-template-columns: 1fr; }
+}
