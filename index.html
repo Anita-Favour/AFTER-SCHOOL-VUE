@@ -3,14 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOME</title>
+    <title>AfterSchool Connect</title>
+
+    <!-- Google Fonts (from the template) -->
+     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+
+     <!-- Font Awesome icons -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+      <!-- my styles -->
+       <link rel="stylesheet" href="css/style.css">
+       <!-- Vue.js 3 framework -->
     <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    
 </head>
 <body>
     <div id="app">
-        <p>{{title}}</p>
+
+        <header>
+            <div class="container">
+                <h2><i class="fa-solid fa-graduation-cap"></i> {{ siteName }}</h2>
+                <!-- Cart button:
+                 @click (same as v-on:click) switches between the lessons page and the cart page
+                 :disabled stops it workingv when the cart is empty (but lets you go back from the cart page) -->
+                 <button class="btn" @click="toggleCart" :disabled="cart.length === 0 && !showCart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    {{ showCart ? 'Back to lessons' : 'Cart (' + cart.length + ')' }}
+                 </button>
+            </div>
+        </header>
+
+        <main class="container">
+             <!-- LESSONS PAGE -->
+              <!-- v-if: this whole block only shows when showCart is false -->
+               <div v-if="!showCart">
+
+                <div class="hero">
+                    <h1>Find a Fun After School Class</h1>
+                    <p>Choose a lesson, add it to your cart and book in seconds.</p>
+                </div>
+
+                <!-- Toolbar: sorting and teacher filter -->
+                 <div class="toolbar">
+
+                    <!-- [Challenge] Search box. Every time you type, app.js asks the server (/search) for matches -->
+                     <div>
+                        <label>Search</label>
+                        <input type="text" v-model="searchTerm" placeholder="e.g.math, hendon, 90">
+                     </div>
+
+                     <!-- v--model links the dropdown to the "sortBy" variable in app.js -->
+                      <div>
+                        <label>Sort by</label>
+                        <select v-model="sortBy">
+                            <option value="topic">Subject</option>
+                            <option value="location">Location</option>
+                            <option value="price">Price</option>
+                            <option value="space">Spaces</option>
+                        </select>
+                      </div>
+
+                      <!-- Radio buttons linked to "sortOrder" -->
+                       <div>
+                        <label>Order</label>
+                        <input type="radio" value="asc" v-model="sortOrder"> Ascending
+                        <input type="radio" value="desc" v-model="sortOrder"> Descending
+                       </div>
+
+                       
+                 </div>
+               </div>
+        </main>
     </div>
 
     <script src="js/app.js"></script>
