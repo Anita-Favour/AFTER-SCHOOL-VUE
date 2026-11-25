@@ -91,5 +91,120 @@ createApp({
         }
     },
 
-    
+    // ---------------------------------------------
+    // METHODS: functions called by buttons (@click) in the HTML
+    // ---------------------------------------------
+    methods: {
+
+        // Switch between the lessons page and the cart page
+        toggleCart() {
+            this.showCart = !this.showCart;
+            this.orderMessage = '';
+        },
+
+        // Add one space of a lesson to the cart
+        addToCart(lesson) {
+            if (lesson.space > 0) {
+                this.cart.push(lesson); //put the lesson in the cart
+                lesson.space--;
+            }
+        },
+
+        // Remove one item from the cart and give the space back to the lesson
+        removeFromCart(index) {
+            const item = this.cart[index];
+            const lesson = this.lessons.find(l => l._id === item._id);
+            lesson.space++;                  // space goes back to the lesson list
+            this.cart.splice(index, 1);      // remove 1 item at this position
+        },
+
+        // GET all lessons from the server
+        getLessons() {
+            fetch(this.apiUrl + '/lessons')
+            .then(response => response.json())        // turn the response into JSON
+            .then(data => {
+                this.lessons = data;
+                this.getEnrolments();        // once lessons are loaded, get their booking numbers
+            })
+            .catch(error => console.error('Could not load lessons:', error));
+        },
+
+        //[Challenge: Enrolment] GET /enrolment/:lessonid for every lesson
+        getEnrolments() {
+            this.lessons.forEach(lesson => {
+                fetch(this.apiUrl + '/enrolment/' +lesson._id)
+                .then(response => response.json())
+                .then(data => { this.enrolments[lesson._id] = data.enrolment; })
+                .catch(error => console.error('Could not load enrolment:', error));
+            });
+        },
+
+        // [Challenge: Search] Ask the server for lessons that match the search text
+        searchLessons() {
+            if (this.searchTerm.trim() === '') {
+                this.searchIds = null;   // empty box -> show all lessons again
+                return;
+            }
+            // encodeURIComponent makes the text safe to put in a URL (spaces, & etc.)
+            fetch(this.apiUrl + '/search?q=' + encodeURIComponent(this.searchTerm))
+            .then(response => response.json())
+            .then(data => {
+                // keep only the ids; we show our own copies so spaces in the cart stay correct
+                this.searchIds = data.map(lesson => lesson._id);
+            })
+            .catch(error => console.error('Search failed:', error));
+        },
+
+        // Checkout: save the order (POST) and update spaces (PUT)
+        checkout() {
+            // 1. Group the cart by lesson, e.g, 2 x math -> { lessonId, spaces: 2 }
+            const grouped = {};
+            this.cart.forEach(item => {
+                if (!grouped[item._id]) grouped[item._id] = 0;
+                grouped[item._id]++;
+            });
+            const orderLessons = Object.keys(grouped).map(id => ({ lessonId: id, spaces: grouped[id] }));
+
+            // 2. The order object sent to the server
+            const order = {
+                name: this,name,
+                phone: this.phone,
+                lessons: orderLessons
+            };
+
+            // 3. POST the new order to the "orders" collection
+            fetch(this.apiUrl + '/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(order)
+            })
+            .then(response => response.json())
+            .then(() => {
+                // 4. PUT the new number of spaces for every lesson in the order.
+                // Promise.all waits until all the PUT requests have finished
+                const updates = orderLessons.map(item => {
+                    const lesson = this.lessons.find(l => l._id === item.lessonId);
+                    return fetch(this.apiUrl + '/lessons/' + lesson._id, {
+
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ space: lesson.space })
+                    });
+                });
+                return Promise.all(updates);
+            })
+            .then(() => {
+                // 5. Show the confirmation and reset the cart and form
+                this.orderMessage = 'Thank you ' + this.name + '! Your order has been submitted,';
+                this.cart = [];
+                this.name = '';
+                this.phone = '';
+                this.getEnrolments();   // refresh the "Booked" numbers
+            })
+            .catch(error => {
+                console.error('Checkout failed:', error);
+                this.orderMessage = 'Sorry, something went wrong. Please try again.';
+            });
+        }
+    },
 })
