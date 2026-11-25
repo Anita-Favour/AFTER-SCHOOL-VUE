@@ -96,12 +96,39 @@
                                     <!-- [Challenge] Enrollment: how many spaceshave already been bought (from /enrolment/:id) -->
                                      <p><i class="fa-solid fa-users"></i> Booked: {{ enrolments[lesson._id] || 0 }}</p>
 
-                                     
+                                     <!-- Addd to Cart: always visible, disabled when there are no spaces left -->
+                                      <button class="btn" @click="addToCart(lesson)" :disabled="lesson.space === 0">
+                                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                                      </button>
                             </div>
                          </div>
 
-
+                         <!-- Shown only if the list is empty -->
+                          <p v-if="sortedLessons.length ===0">No lessons found</p>
                  </div>
+
+                 <!--  CART PAGE  -->
+                   <div v-else class="cart-page">
+
+                    <!-- Left side: items in the cart -->
+                     <div>
+                        <h2>Your Cart</h2>
+                        <p v-if="cart.length === 0">Your cart is empty.</p>
+
+                        <!-- One row per space added. index tells us which item to remove -->
+                         <div class="card cart-item" v-for="(item, index) in cart" :key="index">
+                            <div>
+                                <h3>{{ item.topic }}</h3>
+                                <p>{{ item.location }} . £{{ item.price }}</p>
+                            </div>
+                            <button class="btn btn-remove" @click="removeFromCart(index)">
+                                <i class="fa-solid fa-trash"></i> Remove
+                            </button>
+                         </div>
+                     </div>
+
+                     
+                   </div>
                </div>
         </main>
     </div>
