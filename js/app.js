@@ -12,7 +12,7 @@ createApp({
         return {
             siteName: 'AfterSchool Connect',
 
-            apiUrl: 'http://localhost:3000',
+            apiUrl: 'https://m01146275-after-school-express.onrender.com',
 
             lessons: [],         // all lessons from GET /lessons
             teachers: [],        // all teachers from GET /teachers
