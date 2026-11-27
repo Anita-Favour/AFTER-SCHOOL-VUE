@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AfterSchool Connect</title>
 
     <!-- Google Fonts (from the template) -->
-     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap"
+        rel="stylesheet">
 
-     <!-- Font Awesome icons -->
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-      <!-- my styles -->
-       <link rel="stylesheet" href="css/style.css">
-       <!-- Vue.js 3 framework -->
+    <!-- my styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Vue.js 3 framework -->
     <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
-    
+
 </head>
+
 <body>
     <div id="app">
 
@@ -26,17 +29,17 @@
                 <!-- Cart button:
                  @click (same as v-on:click) switches between the lessons page and the cart page
                  :disabled stops it workingv when the cart is empty (but lets you go back from the cart page) -->
-                 <button class="btn" @click="toggleCart" :disabled="cart.length === 0 && !showCart">
+                <button class="btn" @click="toggleCart" :disabled="cart.length === 0 && !showCart">
                     <i class="fa-solid fa-cart-shopping"></i>
                     {{ showCart ? 'Back to lessons' : 'Cart (' + cart.length + ')' }}
-                 </button>
+                </button>
             </div>
         </header>
 
         <main class="container">
-             <!-- LESSONS PAGE -->
-              <!-- v-if: this whole block only shows when showCart is false -->
-               <div v-if="!showCart">
+            <!-- LESSONS PAGE -->
+            <!-- v-if: this whole block only shows when showCart is false -->
+            <div v-if="!showCart">
 
                 <div class="hero">
                     <h1>Find a Fun After School Class</h1>
@@ -44,16 +47,16 @@
                 </div>
 
                 <!-- Toolbar: sorting and teacher filter -->
-                 <div class="toolbar">
+                <div class="toolbar">
 
                     <!-- [Challenge] Search box. Every time you type, app.js asks the server (/search) for matches -->
-                     <div>
+                    <div>
                         <label>Search</label>
                         <input type="text" v-model="searchTerm" placeholder="e.g.math, hendon, 90">
-                     </div>
+                    </div>
 
-                     <!-- v--model links the dropdown to the "sortBy" variable in app.js -->
-                      <div>
+                    <!-- v--model links the dropdown to the "sortBy" variable in app.js -->
+                    <div>
                         <label>Sort by</label>
                         <select v-model="sortBy">
                             <option value="topic">Subject</option>
@@ -61,101 +64,110 @@
                             <option value="price">Price</option>
                             <option value="space">Spaces</option>
                         </select>
-                      </div>
+                    </div>
 
-                      <!-- Radio buttons linked to "sortOrder" -->
-                       <div>
+                    <!-- Radio buttons linked to "sortOrder" -->
+                    <div>
                         <label>Order</label>
                         <input type="radio" value="asc" v-model="sortOrder"> Ascending
                         <input type="radio" value="desc" v-model="sortOrder"> Descending
-                       </div>
+                    </div>
 
-                       <!-- [Challenge] Teacher dropdown, filled from the /teachers route -->
+                    <!-- [Challenge] Teacher dropdown, filled from the /teachers route -->
+                    <div>
+                        <label>Teacher</label>
+                        <select v-model="selectedTeacher">
+                            <option value="">All teachers</option>
+                            <option v-for="teacher in teachers" :key="teacher._id" :value="teacher._id">
+                                {{ teacher.firstName }} {{ teacher.lastName}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lesson cards: v-for repeats one card for every lesson in "sortedLessons" -->
+                <div class="grid">
+                    <div class="card" v-for="lesson in sortedLessons" :key="lesson._id">
+
+                        <!-- Image comes from the Express static middleware: /images/<file name> -->
+                        <img :src="apiUrl + '/images/' + lesson.image" :alt="lesson.topic">
+
+                        <h3><i class="fa-solid fa-book-open"></i> {{ lesson.topic }}</h3>
+                        <p><i class="fa-solid fa-location-dot"></i> Location: {{ lesson.location }}</p>
+                        <p><i class="fa-solid fa-sterling-sign"></i> Price: £{{ lesson.price }}</p>
+                        <p><i class="fa-solid fa-chair"></i> Spaces left: {{lesson.space }}</p>
+
+                        <!-- [Challenge] Enrollment: how many spaceshave already been bought (from /enrolment/:id) -->
+                        <p><i class="fa-solid fa-users"></i> Booked: {{ enrolments[lesson._id] || 0 }}</p>
+
+                        <!-- Addd to Cart: always visible, disabled when there are no spaces left -->
+                        <button class="btn" @click="addToCart(lesson)" :disabled="lesson.space === 0">
+                            <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shown only if the list is empty -->
+                <p v-if="sortedLessons.length ===0">No lessons found</p>
+            </div>
+
+            <!--  CART PAGE  -->
+            <div v-else class="cart-page">
+
+                <!-- Left side: items in the cart -->
+                <div>
+                    <h2>Your Cart</h2>
+                    <p v-if="cart.length === 0">Your cart is empty.</p>
+
+                    <!-- One row per space added. index tells us which item to remove -->
+                    <div class="card cart-item" v-for="(item, index) in cart" :key="index">
                         <div>
-                            <label>Teacher</label>
-                            <select v-model="selectedTeacher">
-                                <option value="">All teachers</option>
-                                <option v-for="teacher in teachers" :key="teacher._id" :value="teacher._id">
-                                    {{ teacher.firstName }} {{ teacher.lastName}}
-                                </option>
-                            </select>
+                            <h3>{{ item.topic }}</h3>
+                            <p>{{ item.location }} . £{{ item.price }}</p>
                         </div>
+                        <button class="btn btn-remove" @click="removeFromCart(index)">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
 
-                        <!-- Lesson cards: v-for repeats one card for every lesson in "sortedLessons" -->
-                         <div class="grid">
-                            <div class="card" v-for="lesson in sortedlessons" :key="lesson._id">
+                <!-- Right side: checkout form (part of the cart page, as the brief asks)-->
+                <div class="card">
+                    <h2>Checkout</h2>
 
-                                <!-- Image comes from the Express static middleware: /images/<file name> -->
-                                    <img :src="apiUrl + '/images' + lesson.image" :alt="lesson.topic">
+                    <label>Name</label>
+                    <input type="text" v-model="name" placeholder="Letters only">
+                    <!-- Error shows only if something was typed and it is not valid -->
+                    <p class="error" v-if="name && !isNameValid">Name must contain letters only</p>
 
-                                    <h3><i class="fa-solid fa-book-open"></i> {{ lesson.topic }}</h3>
-                                    <p><i class="fa-solid fa-location-dot"></i> Location: {{ lesson.location }}</p>
-                                    <p><i class="fa-solid fa-sterling-sign"></i> Price: £{{ lesson.price }}</p>
-                                    <p><i class="fa-solid fa-chair"></i> Spaces left: {{lesson.space }}</p>
+                    <label>Phone</label>
+                    <input type="text" v-model="phone" placeholder="Numbers only">
+                    <!-- Error shows only if something was typed and it is not valid -->
+                    <p class="error" v-if="phone && !isPhoneValid">Phone must contain numbers only</p>
 
-                                    <!-- [Challenge] Enrollment: how many spaceshave already been bought (from /enrolment/:id) -->
-                                     <p><i class="fa-solid fa-users"></i> Booked: {{ enrolments[lesson._id] || 0 }}</p>
+                    <p><strong>Total: £{{ cartTotal }}</strong></p>
 
-                                     <!-- Addd to Cart: always visible, disabled when there are no spaces left -->
-                                      <button class="btn" @click="addToCart(lesson)" :disabled="lesson.space === 0">
-                                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
-                                      </button>
-                            </div>
-                         </div>
+                    <!-- Checkout: always visible, only clickable when name and phone are valid and the cart items -->
+                    <button class="btn" @click="checkout" :disabled="!canCheckout">
+                        <i class="fa-solid fa-check"></i> Checkout
+                    </button>
 
-                         <!-- Shown only if the list is empty -->
-                          <p v-if="sortedLessons.length ===0">No lessons found</p>
-                 </div>
+                    <!-- Confirmation message after the order is submitted -->
+                    <p class="success" v-if="orderMessage">{{ orderMessage }}</p>
+                </div>
+            </div>
 
-                 <!--  CART PAGE  -->
-                   <div v-else class="cart-page">
-
-                    <!-- Left side: items in the cart -->
-                     <div>
-                        <h2>Your Cart</h2>
-                        <p v-if="cart.length === 0">Your cart is empty.</p>
-
-                        <!-- One row per space added. index tells us which item to remove -->
-                         <div class="card cart-item" v-for="(item, index) in cart" :key="index">
-                            <div>
-                                <h3>{{ item.topic }}</h3>
-                                <p>{{ item.location }} . £{{ item.price }}</p>
-                            </div>
-                            <button class="btn btn-remove" @click="removeFromCart(index)">
-                                <i class="fa-solid fa-trash"></i> Remove
-                            </button>
-                         </div>
-                     </div>
-
-                     <!-- Right side: checkout form (part of the cart page, as the brief asks)-->
-                      <div class="card">
-                        <h2>Checkout</h2>
-
-                        <label>Name</label>
-                        <input type="text" v-model="name" placeholder="Letters only">
-
-                        <!-- Error shows only if something was typed and it is not valid -->
-                         <p class="error" v-if="phone && !isPhoneValid">Phone must contain numbers only</p>
-                         <p><strong>Total: £{{ cartTotal }}</strong></p>
-
-                         <!-- Checkout: always visible, only clickable when name and phone are valid and the cart items -->
-                          <button class="btn" @click="checkout" :disabled="!canCheckout">
-                            <i class="fa-solid fa-check"></i> Checkout
-                          </button>
-
-                          <!-- Confirmation message after the order is submitted -->
-                           <p class="successs" v-if="orderMessage">{{ orderMessage }}</p>
-                      </div>
-                   </div>
-               </div>
         </main>
 
         <footer>
             <p>&copy; 2026 {{ siteName }}</p>
-            <p>Design based on <a href="https://www.tooplate.com/view/2168-sweet-bakery" target="_blank">Tooplate Sweet</a></p>
+            <p>Design based on <a href="https://www.tooplate.com/view/2168-sweet-bakery" target="_blank">Tooplate
+                    Sweet</a>
+            </p>
         </footer>
     </div>
 
     <script src="js/app.js"></script>
 </body>
+
 </html>

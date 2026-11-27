@@ -1,4 +1,4 @@
-const {createApp} = Vue;
+const { createApp } = Vue;
 
 
 createApp({
@@ -12,7 +12,7 @@ createApp({
         return {
             siteName: 'AfterSchool Connect',
 
-            apiUrl: 'https://m01146275-after-school-express.onrender.com',
+            apiUrl: 'http://localhost:3000',
 
             lessons: [],         // all lessons from GET /lessons
             teachers: [],        // all teachers from GET /teachers
@@ -52,7 +52,7 @@ createApp({
                 return this.searchedLessons; // no teacher chosen, show everything (after search)
             }
             // find the chosen teacher, then keep lessons whose _id is in their lessonsIds list
-            const teacher = this.teachers.find(t => t._id === this.selectedteacher);
+            const teacher = this.teachers.find(t => t._id === this.selectedTeacher);
             return this.searchedLessons.filter(lesson => teacher.lessonIds.includes(lesson._id));
         },
 
@@ -121,21 +121,21 @@ createApp({
         // GET all lessons from the server
         getLessons() {
             fetch(this.apiUrl + '/lessons')
-            .then(response => response.json())        // turn the response into JSON
-            .then(data => {
-                this.lessons = data;
-                this.getEnrolments();        // once lessons are loaded, get their booking numbers
-            })
-            .catch(error => console.error('Could not load lessons:', error));
+                .then(response => response.json())        // turn the response into JSON
+                .then(data => {
+                    this.lessons = data;
+                    this.getEnrolments();        // once lessons are loaded, get their booking numbers
+                })
+                .catch(error => console.error('Could not load lessons:', error));
         },
 
         //[Challenge: Enrolment] GET /enrolment/:lessonid for every lesson
         getEnrolments() {
             this.lessons.forEach(lesson => {
-                fetch(this.apiUrl + '/enrolment/' +lesson._id)
-                .then(response => response.json())
-                .then(data => { this.enrolments[lesson._id] = data.enrolment; })
-                .catch(error => console.error('Could not load enrolment:', error));
+                fetch(this.apiUrl + '/enrolment/' + lesson._id)
+                    .then(response => response.json())
+                    .then(data => { this.enrolments[lesson._id] = data.enrolment; })
+                    .catch(error => console.error('Could not load enrolment:', error));
             });
         },
 
@@ -147,12 +147,23 @@ createApp({
             }
             // encodeURIComponent makes the text safe to put in a URL (spaces, & etc.)
             fetch(this.apiUrl + '/search?q=' + encodeURIComponent(this.searchTerm))
-            .then(response => response.json())
-            .then(data => {
-                // keep only the ids; we show our own copies so spaces in the cart stay correct
-                this.searchIds = data.map(lesson => lesson._id);
-            })
-            .catch(error => console.error('Search failed:', error));
+                .then(response => response.json())
+                .then(data => {
+                    // keep only the ids; we show our own copies so spaces in the cart stay correct
+                    this.searchIds = data.map(lesson => lesson._id);
+                })
+                .catch(error => console.error('Search failed:', error));
+        },
+
+        // [Challenge: Teachers] GET all teachers from the server
+        getTeachers() {
+            fetch(this.apiUrl + '/teachers')
+                .then(response => response.json())
+                .then(data => {
+                    // MongoDB ids arrive as strings, so lessonIds can be compared with lesson._id
+                    this.teachers = data;
+                })
+                .catch(error => console.error('Could not load teachers:', error));
         },
 
         // Checkout: save the order (POST) and update spaces (PUT)
@@ -167,7 +178,7 @@ createApp({
 
             // 2. The order object sent to the server
             const order = {
-                name: this,name,
+                name: this.name,
                 phone: this.phone,
                 lessons: orderLessons
             };
@@ -178,33 +189,33 @@ createApp({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(order)
             })
-            .then(response => response.json())
-            .then(() => {
-                // 4. PUT the new number of spaces for every lesson in the order.
-                // Promise.all waits until all the PUT requests have finished
-                const updates = orderLessons.map(item => {
-                    const lesson = this.lessons.find(l => l._id === item.lessonId);
-                    return fetch(this.apiUrl + '/lessons/' + lesson._id, {
+                .then(response => response.json())
+                .then(() => {
+                    // 4. PUT the new number of spaces for every lesson in the order.
+                    // Promise.all waits until all the PUT requests have finished
+                    const updates = orderLessons.map(item => {
+                        const lesson = this.lessons.find(l => l._id === item.lessonId);
+                        return fetch(this.apiUrl + '/lessons/' + lesson._id, {
 
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ space: lesson.space })
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ space: lesson.space })
+                        });
                     });
+                    return Promise.all(updates);
+                })
+                .then(() => {
+                    // 5. Show the confirmation and reset the cart and form
+                    this.orderMessage = 'Thank you ' + this.name + '! Your order has been submitted,';
+                    this.cart = [];
+                    this.name = '';
+                    this.phone = '';
+                    this.getEnrolments();   // refresh the "Booked" numbers
+                })
+                .catch(error => {
+                    console.error('Checkout failed:', error);
+                    this.orderMessage = 'Sorry, something went wrong. Please try again.';
                 });
-                return Promise.all(updates);
-            })
-            .then(() => {
-                // 5. Show the confirmation and reset the cart and form
-                this.orderMessage = 'Thank you ' + this.name + '! Your order has been submitted,';
-                this.cart = [];
-                this.name = '';
-                this.phone = '';
-                this.getEnrolments();   // refresh the "Booked" numbers
-            })
-            .catch(error => {
-                console.error('Checkout failed:', error);
-                this.orderMessage = 'Sorry, something went wrong. Please try again.';
-            });
         }
     },
 
